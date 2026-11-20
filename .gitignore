@@ -1,0 +1,10 @@
+build/
+JUCE/
+_deps/
+*.user
+*.sdf
+*.sln
+*.vcxproj*
+.DS_Store
+*.vst3
+!docs/*.png
