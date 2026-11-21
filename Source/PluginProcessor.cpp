@@ -4,7 +4,7 @@
 //==============================================================================
 namespace
 {
-    /** Logarithmic frequency range - musical knob feel. */
+    /** Logarithmic range - musical knob feel. */
     juce::NormalisableRange<float> logRange (float lo, float hi)
     {
         return juce::NormalisableRange<float> (
@@ -21,6 +21,7 @@ namespace
 
     juce::String pctText (float v)   { return juce::String (juce::roundToInt (v * 100.0f)) + " %"; }
     juce::String dbText  (float v)   { return (v >= 0 ? "+" : "") + juce::String (v, 1) + " dB"; }
+
     juce::String degText (float v)
     {
         // NB: never build the degree sign from a narrow string literal - MSVC on a
@@ -30,7 +31,19 @@ namespace
         return juce::String (juce::roundToInt (v))
                + juce::String::charToString ((juce::juce_wchar) 0x00b0);
     }
+
     juce::String xText   (float v)   { return juce::String (v, 2) + "x"; }
+
+    juce::String msText  (float v)
+    {
+        if (v >= 1000.0f)
+            return juce::String (v / 1000.0f, 2) + " s";
+
+        if (v < 10.0f)
+            return juce::String (v, 1) + " ms";
+
+        return juce::String (juce::roundToInt (v)) + " ms";
+    }
 
     /** Skewed sine -> triangle -> saw LFO. */
     inline float lfoValue (float phase, float shape) noexcept
@@ -78,6 +91,21 @@ void PhaseDriftProcessor::Biquad::setHighpass (float fc, float sampleRate) noexc
     a2 = (1.0f - alpha) / a0;
 }
 
+//==============================================================================
+void PhaseDriftProcessor::EchoTap::prepare (int maxSamples)
+{
+    buf.assign ((size_t) juce::jmax (8, maxSamples), 0.0f);
+    reset();
+}
+
+void PhaseDriftProcessor::EchoTap::reset() noexcept
+{
+    std::fill (buf.begin(), buf.end(), 0.0f);
+    writePos = 0;
+    delaySamples = 0.0f;
+    dampState = 0.0f;
+}
+
 void PhaseDriftProcessor::Channel::reset() noexcept
 {
     for (int b = 0; b < pid::numBands; ++b)
@@ -95,6 +123,9 @@ void PhaseDriftProcessor::Channel::reset() noexcept
         splitLP[s].reset();
         splitHP[s].reset();
     }
+
+    for (auto& e : echo)
+        e.reset();
 
     tiltLP.reset();
     postLP.reset();
@@ -140,7 +171,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PhaseDriftProcessor::createP
     addFloat (pid::ring,     "Ring Mod",    { 0.0f, 1.0f, 0.001f },   0.0f,   pctText, "Core");
     addFloat (pid::tilt,     "Pre Tilt",    { -1.0f, 1.0f, 0.001f },  0.0f,   pctText, "Core");
 
-    addFloat (pid::feedback, "Feedback",    { 0.0f, 0.95f, 0.001f },  0.35f,  pctText, "Feedback");
+    addFloat (pid::feedback, "Feedback",    { 0.0f, 0.95f, 0.001f },  0.20f,  pctText, "Feedback");
     addFloat (pid::fbTone,   "Feedback Tone", { 0.0f, 1.0f, 0.001f }, 0.55f,  pctText, "Feedback");
     addFloat (pid::chaos,    "Chaos",       { 0.0f, 1.0f, 0.001f },   0.15f,  pctText, "Feedback");
     addFloat (pid::topology, "Series / Parallel", { 0.0f, 1.0f, 0.001f }, 0.20f, pctText, "Feedback");
@@ -159,6 +190,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PhaseDriftProcessor::createP
     static const float defaultPhase[4] = { 0.35f, -0.20f, 0.50f, 0.15f };
     static const float defaultDepth[4] = { 0.22f, 0.18f, 0.26f, 0.12f };
     static const float defaultRate[4]  = { 0.17f, 0.43f, 0.71f, 1.13f };
+    static const float defaultEcho[4]  = { 0.50f, 0.75f, 1.00f, 1.50f };
     static const char* names[4]        = { "Band 1", "Band 2", "Band 3", "Band 4" };
 
     for (int b = 0; b < pid::numBands; ++b)
@@ -173,6 +205,29 @@ juce::AudioProcessorValueTreeState::ParameterLayout PhaseDriftProcessor::createP
                   { 0.0f, 1.0f, 0.001f }, defaultDepth[b],       pctText, names[b]);
         addFloat (pid::bandRate (b),  ("Mod Rate" + suffix).toRawUTF8(),
                   logRange (0.02f, 12.0f), defaultRate[b],       xText,   names[b]);
+        addFloat (pid::bandEcho (b),  ("Echo Time Ratio" + suffix).toRawUTF8(),
+                  logRange (0.25f, 3.0f), defaultEcho[b],        xText,   names[b]);
+    }
+
+    // --- echo, one independent set per output channel -------------------------
+    static const float defaultTime[2] = { 240.0f, 380.0f };
+    static const float defaultFb[2]   = { 0.42f, 0.50f };
+    static const float defaultDamp[2] = { 0.45f, 0.55f };
+    static const float defaultMix[2]  = { 0.55f, 0.60f };
+    static const char* chName[2]      = { " Left", " Right" };
+
+    for (int c = 0; c < pid::numChans; ++c)
+    {
+        const juce::String suffix = chName[c];
+
+        addFloat (pid::echoTime (c), ("Echo Time" + suffix).toRawUTF8(),
+                  logRange (2.0f, 1000.0f), defaultTime[c], msText,  "Echo");
+        addFloat (pid::echoFb (c),   ("Echo Feedback" + suffix).toRawUTF8(),
+                  { 0.0f, 0.90f, 0.001f }, defaultFb[c],     pctText, "Echo");
+        addFloat (pid::echoDamp (c), ("Echo Damping" + suffix).toRawUTF8(),
+                  { 0.0f, 1.0f, 0.001f }, defaultDamp[c],    pctText, "Echo");
+        addFloat (pid::echoMix (c),  ("Echo Level" + suffix).toRawUTF8(),
+                  { 0.0f, 1.0f, 0.001f }, defaultMix[c],     pctText, "Echo");
     }
 
     return layout;
@@ -183,9 +238,17 @@ void PhaseDriftProcessor::prepareToPlay (double sampleRate, int)
 {
     sr = (float) sampleRate;
 
+    const int maxSamples = (int) std::ceil (maxEchoSeconds * sr) + 8;
+
     channels.resize ((size_t) juce::jmax (1, getTotalNumOutputChannels()));
+
     for (auto& c : channels)
+    {
+        for (auto& e : c.echo)
+            e.prepare (maxSamples);
+
         c.reset();
+    }
 
     const float ramp = 0.02f;
     smInGain.reset (sampleRate, ramp);
@@ -197,11 +260,23 @@ void PhaseDriftProcessor::prepareToPlay (double sampleRate, int)
     smTilt.reset (sampleRate, ramp);
     smTopo.reset (sampleRate, ramp);
 
+    // echo times are smoothed in samples, slightly slower so time changes glide
+    for (int c = 0; c < pid::numChans; ++c)
+    {
+        smEchoTime[c].reset (sampleRate, 0.05);
+        smEchoFb[c].reset (sampleRate, 0.02);
+        smEchoMix[c].reset (sampleRate, 0.02);
+        echoDampK[c] = 0.5f;
+    }
+
     tiltK = 1.0f - std::exp (-juce::MathConstants<float>::twoPi * 260.0f / sr);
     dcCoeff = 1.0f - juce::MathConstants<float>::twoPi * 8.0f / sr;
 
     for (int b = 0; b < pid::numBands; ++b)
+    {
         bands[b].aSmooth = 0.0f;
+        echoBandScale[b] = 1.0f;
+    }
 
     dcState[0] = dcState[1] = dcLast[0] = dcLast[1] = 0.0f;
 }
@@ -260,6 +335,22 @@ void PhaseDriftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         bands[b].phase = val (pid::bandPhase (b));
         bands[b].depth = val (pid::bandDepth (b));
         bands[b].rate  = val (pid::bandRate (b));
+        echoBandScale[b] = val (pid::bandEcho (b));
+    }
+
+    // echo, one set of values per channel ----------------------------------
+    for (int c = 0; c < pid::numChans; ++c)
+    {
+        const float timeMs = val (pid::echoTime (c));
+        const float damp   = val (pid::echoDamp (c));
+
+        smEchoTime[c].setTargetValue (juce::jlimit (1.0f, maxEchoSeconds * sr,
+                                                    timeMs * 0.001f * sr));
+        smEchoFb[c].setTargetValue (val (pid::echoFb (c)));
+        smEchoMix[c].setTargetValue (val (pid::echoMix (c)));
+
+        const float fc = juce::jlimit (120.0f, sr * 0.45f, 200.0f + damp * damp * 13000.0f);
+        echoDampK[c] = 1.0f - std::exp (-juce::MathConstants<float>::twoPi * fc / sr);
     }
 
     smInGain.setTargetValue  (juce::Decibels::decibelsToGain (inGainDb));
@@ -314,6 +405,7 @@ void PhaseDriftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     }
 
     const float aSmoothK = 1.0f - std::exp (-1.0f / (sr * 0.004f));
+    const float dlyK     = 1.0f - std::exp (-1.0f / (sr * 0.050f));
 
     // ---- per-sample engine -----------------------------------------------
     for (int n = 0; n < numSamples; ++n)
@@ -374,8 +466,14 @@ void PhaseDriftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
                     c.lfoPhase[b] -= 1.0f;
             }
 
-            // band allpass chains -------------------------------------------
+            // per-channel echo settings ------------------------------------
+            const float delayBase = smEchoTime[ch].getNextValue();
+            const float fbEcho    = smEchoFb[ch].getNextValue() * 0.92f;
+            const float mixEcho   = smEchoMix[ch].getNextValue();
+
+            // band allpass chains + per-band echo --------------------------
             float parallel = 0.0f;
+            float echoSum  = 0.0f;
 
             for (int b = 0; b < pid::numBands; ++b)
             {
@@ -384,19 +482,40 @@ void PhaseDriftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
                 for (int s = 0; s < 4; ++s)
                     v = c.bandAP[b][s].process (v, a[b]);
 
+                // each band owns a delay line, so every band gets its own
+                // repetition - the ratios are what make the echoes split apart
+                auto& tap = c.echo[b];
+
+                const float want = juce::jlimit (1.0f, maxEchoSeconds * sr - 4.0f,
+                                                 delayBase * echoBandScale[b]);
+
+                if (tap.delaySamples <= 0.0f)
+                    tap.delaySamples = want;
+                else
+                    tap.delaySamples += (want - tap.delaySamples) * dlyK;
+
+                const float tapped = tap.read (tap.delaySamples);
+
+                tap.dampState += echoDampK[ch] * (tapped - tap.dampState);
+                tap.write (juce::jlimit (-8.0f, 8.0f, v + tap.dampState * fbEcho));
+
+                echoSum += tapped;
                 parallel += v;
             }
 
             // series chain over the whole spectrum ---------------------------
-            float v = x;
+            float v2 = x;
 
             for (int b = 0; b < pid::numBands; ++b)
                 for (int s = 0; s < 4; ++s)
-                    v = c.seriesAP[b][s].process (v, a[b]);
+                    v2 = c.seriesAP[b][s].process (v2, a[b]);
 
-            const float series = v;
+            const float series = v2;
 
             float wetSig = series + topoNow * (parallel - series);
+
+            // per-band echo returns, summed and scaled down a little
+            wetSig += mixEcho * echoSum * 0.5f;
 
             // wavefolder ----------------------------------------------------
             if (driveNow > 0.0f)

@@ -4,16 +4,16 @@
 namespace
 {
     const juce::Colour kBg      { 0xff080a0d };
-    const juce::Colour kBgDeep  { 0xff030508 };
+    const juce::Colour kBgDeep  { 0xff04060a };
     const juce::Colour kPanel   { 0xff0c1015 };
     const juce::Colour kBorder  { 0xff1a2430 };
-    const juce::Colour kDim     { 0xff5f7183 };
+    const juce::Colour kDim     { 0xff7d8e9d };
     const juce::Colour kText    { 0xffe2edf3 };
-    const juce::Colour kCyan    { 0xff3be8ff };
-    const juce::Colour kPink    { 0xffff3d8a };
-    const juce::Colour kLime    { 0xffb4ff39 };
-    const juce::Colour kViolet  { 0xff9d6bff };
-    const juce::Colour kAmber   { 0xffffb454 };
+    const juce::Colour kCyan    { 0xff7ecbd6 };
+    const juce::Colour kPink    { 0xffcf8fa6 };
+    const juce::Colour kLime    { 0xffb6c98c };
+    const juce::Colour kViolet  { 0xffa79ac6 };
+    const juce::Colour kAmber   { 0xffd8b58c };
 
     const juce::Colour kBandAccents[pid::numBands] { kCyan, kPink, kLime, kViolet };
     const char* const kBandNames[pid::numBands]  { "LOW", "LOW MID", "HIGH MID", "AIR" };
@@ -56,81 +56,121 @@ namespace
     const PresetValue initValues[] {
         { pid::inGain, 0.0f }, { pid::mix, 1.0f }, { pid::outGain, 0.0f },
         { pid::drive, 0.12f }, { pid::ring, 0.0f }, { pid::tilt, 0.0f },
-        { pid::feedback, 0.35f }, { pid::fbTone, 0.55f }, { pid::chaos, 0.15f },
+        { pid::feedback, 0.20f }, { pid::fbTone, 0.55f }, { pid::chaos, 0.15f },
         { pid::topology, 0.2f }, { pid::spread, 0.35f }, { pid::msRotate, 0.0f },
         { pid::lfoSpeed, 1.0f }, { pid::lfoWave, 0.3f }, { pid::lfoPhase, 0.0f },
         { pid::bandFreq (0), 90.0f },  { pid::bandPhase (0), 0.35f },
         { pid::bandDepth (0), 0.22f }, { pid::bandRate (0), 0.17f },
+        { pid::bandEcho (0), 0.5f },
         { pid::bandFreq (1), 720.0f }, { pid::bandPhase (1), -0.2f },
         { pid::bandDepth (1), 0.18f }, { pid::bandRate (1), 0.43f },
+        { pid::bandEcho (1), 0.75f },
         { pid::bandFreq (2), 3100.0f }, { pid::bandPhase (2), 0.5f },
         { pid::bandDepth (2), 0.26f }, { pid::bandRate (2), 0.71f },
+        { pid::bandEcho (2), 1.0f },
         { pid::bandFreq (3), 9500.0f }, { pid::bandPhase (3), 0.15f },
-        { pid::bandDepth (3), 0.12f }, { pid::bandRate (3), 1.13f }
+        { pid::bandDepth (3), 0.12f }, { pid::bandRate (3), 1.13f },
+        { pid::bandEcho (3), 1.5f },
+        { pid::echoTime (0), 240.0f }, { pid::echoTime (1), 380.0f },
+        { pid::echoFb (0), 0.42f }, { pid::echoFb (1), 0.50f },
+        { pid::echoDamp (0), 0.45f }, { pid::echoDamp (1), 0.55f },
+        { pid::echoMix (0), 0.55f }, { pid::echoMix (1), 0.60f }
     };
 
     const PresetValue glassValues[] {
         { pid::inGain, -3.0f }, { pid::mix, 1.0f }, { pid::outGain, 1.0f },
         { pid::drive, 0.22f }, { pid::ring, 0.05f }, { pid::tilt, 0.15f },
-        { pid::feedback, 0.46f }, { pid::fbTone, 0.8f }, { pid::chaos, 0.1f },
+        { pid::feedback, 0.30f }, { pid::fbTone, 0.8f }, { pid::chaos, 0.1f },
         { pid::topology, 0.62f }, { pid::spread, 0.62f }, { pid::msRotate, 12.0f },
         { pid::lfoSpeed, 0.75f }, { pid::lfoWave, 0.34f }, { pid::lfoPhase, 40.0f },
         { pid::bandFreq (0), 150.0f },  { pid::bandPhase (0), 0.62f },
         { pid::bandDepth (0), 0.38f },  { pid::bandRate (0), 0.11f },
+        { pid::bandEcho (0), 0.25f },
         { pid::bandFreq (1), 1250.0f }, { pid::bandPhase (1), -0.42f },
         { pid::bandDepth (1), 0.32f },  { pid::bandRate (1), 0.27f },
+        { pid::bandEcho (1), 0.5f },
         { pid::bandFreq (2), 5400.0f }, { pid::bandPhase (2), 0.78f },
         { pid::bandDepth (2), 0.48f },  { pid::bandRate (2), 0.55f },
+        { pid::bandEcho (2), 0.85f },
         { pid::bandFreq (3), 15000.0f }, { pid::bandPhase (3), -0.24f },
-        { pid::bandDepth (3), 0.22f },   { pid::bandRate (3), 0.92f }
+        { pid::bandDepth (3), 0.22f },   { pid::bandRate (3), 0.92f },
+        { pid::bandEcho (3), 1.25f },
+        { pid::echoTime (0), 180.0f }, { pid::echoTime (1), 265.0f },
+        { pid::echoFb (0), 0.35f }, { pid::echoFb (1), 0.40f },
+        { pid::echoDamp (0), 0.25f }, { pid::echoDamp (1), 0.30f },
+        { pid::echoMix (0), 0.62f }, { pid::echoMix (1), 0.70f }
     };
 
     const PresetValue ghostValues[] {
         { pid::inGain, 0.0f }, { pid::mix, 1.0f }, { pid::outGain, -1.5f },
         { pid::drive, 0.06f }, { pid::ring, 0.0f }, { pid::tilt, -0.35f },
-        { pid::feedback, 0.72f }, { pid::fbTone, 0.75f }, { pid::chaos, 0.28f },
+        { pid::feedback, 0.55f }, { pid::fbTone, 0.75f }, { pid::chaos, 0.28f },
         { pid::topology, 1.0f }, { pid::spread, 0.22f }, { pid::msRotate, 0.0f },
         { pid::lfoSpeed, 0.3f }, { pid::lfoWave, 0.5f }, { pid::lfoPhase, 0.0f },
         { pid::bandFreq (0), 62.0f },  { pid::bandPhase (0), 0.86f },
         { pid::bandDepth (0), 0.5f },  { pid::bandRate (0), 0.06f },
+        { pid::bandEcho (0), 0.5f },
         { pid::bandFreq (1), 480.0f }, { pid::bandPhase (1), -0.6f },
         { pid::bandDepth (1), 0.42f }, { pid::bandRate (1), 0.13f },
+        { pid::bandEcho (1), 1.0f },
         { pid::bandFreq (2), 2400.0f }, { pid::bandPhase (2), 0.9f },
         { pid::bandDepth (2), 0.6f },   { pid::bandRate (2), 0.21f },
+        { pid::bandEcho (2), 1.5f },
         { pid::bandFreq (3), 8200.0f }, { pid::bandPhase (3), 0.52f },
-        { pid::bandDepth (3), 0.36f },  { pid::bandRate (3), 0.33f }
+        { pid::bandDepth (3), 0.36f },  { pid::bandRate (3), 0.33f },
+        { pid::bandEcho (3), 2.0f },
+        { pid::echoTime (0), 420.0f }, { pid::echoTime (1), 470.0f },
+        { pid::echoFb (0), 0.62f }, { pid::echoFb (1), 0.66f },
+        { pid::echoDamp (0), 0.70f }, { pid::echoDamp (1), 0.75f },
+        { pid::echoMix (0), 0.55f }, { pid::echoMix (1), 0.60f }
     };
 
     const PresetValue dopplerValues[] {
         { pid::inGain, 0.0f }, { pid::mix, 0.88f }, { pid::outGain, 0.0f },
         { pid::drive, 0.25f }, { pid::ring, 0.35f }, { pid::tilt, 0.0f },
-        { pid::feedback, 0.32f }, { pid::fbTone, 0.4f }, { pid::chaos, 0.12f },
+        { pid::feedback, 0.25f }, { pid::fbTone, 0.4f }, { pid::chaos, 0.12f },
         { pid::topology, 0.3f }, { pid::spread, 0.85f }, { pid::msRotate, 45.0f },
         { pid::lfoSpeed, 2.2f }, { pid::lfoWave, 0.15f }, { pid::lfoPhase, 90.0f },
         { pid::bandFreq (0), 42.0f },  { pid::bandPhase (0), -0.92f },
         { pid::bandDepth (0), 0.72f }, { pid::bandRate (0), 0.05f },
+        { pid::bandEcho (0), 1.0f },
         { pid::bandFreq (1), 320.0f }, { pid::bandPhase (1), 0.82f },
         { pid::bandDepth (1), 0.62f }, { pid::bandRate (1), 0.09f },
+        { pid::bandEcho (1), 1.12f },
         { pid::bandFreq (2), 1900.0f }, { pid::bandPhase (2), -0.72f },
         { pid::bandDepth (2), 0.55f },  { pid::bandRate (2), 0.14f },
+        { pid::bandEcho (2), 1.28f },
         { pid::bandFreq (3), 6200.0f }, { pid::bandPhase (3), 0.9f },
-        { pid::bandDepth (3), 0.42f },  { pid::bandRate (3), 0.22f }
+        { pid::bandDepth (3), 0.42f },  { pid::bandRate (3), 0.22f },
+        { pid::bandEcho (3), 1.45f },
+        { pid::echoTime (0), 155.0f }, { pid::echoTime (1), 215.0f },
+        { pid::echoFb (0), 0.30f }, { pid::echoFb (1), 0.36f },
+        { pid::echoDamp (0), 0.20f }, { pid::echoDamp (1), 0.25f },
+        { pid::echoMix (0), 0.48f }, { pid::echoMix (1), 0.55f }
     };
 
     const PresetValue meltValues[] {
         { pid::inGain, -2.0f }, { pid::mix, 1.0f }, { pid::outGain, -1.0f },
         { pid::drive, 0.55f }, { pid::ring, 0.08f }, { pid::tilt, 0.2f },
-        { pid::feedback, 0.6f }, { pid::fbTone, 0.3f }, { pid::chaos, 0.65f },
+        { pid::feedback, 0.45f }, { pid::fbTone, 0.3f }, { pid::chaos, 0.65f },
         { pid::topology, 0.45f }, { pid::spread, 0.45f }, { pid::msRotate, -25.0f },
         { pid::lfoSpeed, 0.55f }, { pid::lfoWave, 0.42f }, { pid::lfoPhase, 200.0f },
         { pid::bandFreq (0), 120.0f }, { pid::bandPhase (0), 0.42f },
         { pid::bandDepth (0), 0.36f }, { pid::bandRate (0), 0.35f },
+        { pid::bandEcho (0), 0.75f },
         { pid::bandFreq (1), 900.0f }, { pid::bandPhase (1), -0.52f },
         { pid::bandDepth (1), 0.46f }, { pid::bandRate (1), 0.61f },
+        { pid::bandEcho (1), 1.0f },
         { pid::bandFreq (2), 4100.0f }, { pid::bandPhase (2), 0.72f },
         { pid::bandDepth (2), 0.5f },   { pid::bandRate (2), 1.1f },
+        { pid::bandEcho (2), 1.75f },
         { pid::bandFreq (3), 12000.0f }, { pid::bandPhase (3), 0.3f },
-        { pid::bandDepth (3), 0.3f },    { pid::bandRate (3), 1.7f }
+        { pid::bandDepth (3), 0.3f },    { pid::bandRate (3), 1.7f },
+        { pid::bandEcho (3), 2.25f },
+        { pid::echoTime (0), 305.0f }, { pid::echoTime (1), 330.0f },
+        { pid::echoFb (0), 0.58f }, { pid::echoFb (1), 0.52f },
+        { pid::echoDamp (0), 0.55f }, { pid::echoDamp (1), 0.45f },
+        { pid::echoMix (0), 0.62f }, { pid::echoMix (1), 0.66f }
     };
 
     const Preset kPresets[] {
@@ -139,6 +179,18 @@ namespace
         { "GHOST COMB",    ghostValues,   (int) (sizeof (ghostValues)   / sizeof (PresetValue)) },
         { "DOPPLER WELL",  dopplerValues, (int) (sizeof (dopplerValues) / sizeof (PresetValue)) },
         { "TAPE MELT",     meltValues,    (int) (sizeof (meltValues)    / sizeof (PresetValue)) }
+    };
+
+    // Knob indices inside the editor's knob vector -------------------------
+    enum KnobGroup
+    {
+        kBandKnobs     = 0,     // 16: 4 bands x 4
+        kBandEchoKnobs = 16,    // 4:  per-band delay ratio
+        kCoreKnobs     = 20,    // 8
+        kMotionKnobs   = 28,    // 7
+        kEchoLKnobs    = 35,    // 4
+        kEchoRKnobs    = 39,    // 4
+        kNumKnobs      = 43
     };
 }
 
@@ -158,6 +210,10 @@ PhaseDriftEditor::PhaseDriftEditor (PhaseDriftProcessor& p)
         addKnob (pid::bandRate (b),  "RATE",  kBandAccents[b], false, true);
     }
 
+    // --- per-band echo ratio ---------------------------------------------
+    for (int b = 0; b < pid::numBands; ++b)
+        addKnob (pid::bandEcho (b), "ECHO / E", kBandAccents[b], false, true);
+
     // --- core -------------------------------------------------------------
     addKnob (pid::inGain,   "IN",      kAmber,  true,  false);
     addKnob (pid::drive,    "DRIVE",   kPink,   false, false);
@@ -169,13 +225,26 @@ PhaseDriftEditor::PhaseDriftEditor (PhaseDriftProcessor& p)
     addKnob (pid::chaos,    "CHAOS",   kViolet, false, false);
 
     // --- motion -----------------------------------------------------------
-    addKnob (pid::lfoSpeed, "SPEED",   kCyan,   false, false);
-    addKnob (pid::lfoWave,  "SHAPE",   kLime,   false, false);
-    addKnob (pid::lfoPhase, "LFO PH",  kViolet, false, false);
-    addKnob (pid::spread,   "SPREAD",  kCyan,   false, false);
-    addKnob (pid::msRotate, "M/S ROT", kPink,   true,  false);
-    addKnob (pid::topology, "TOPOLOGY", kAmber, false, false);
-    addKnob (pid::fbTone,   "FB TONE", kLime,   false, false);
+    addKnob (pid::lfoSpeed, "SPEED",    kCyan,   false, false);
+    addKnob (pid::lfoWave,  "SHAPE",    kLime,   false, false);
+    addKnob (pid::lfoPhase, "LFO PH",   kViolet, false, false);
+    addKnob (pid::spread,   "SPREAD",   kCyan,   false, false);
+    addKnob (pid::msRotate, "M/S ROT",  kPink,   true,  false);
+    addKnob (pid::topology, "TOPOLOGY", kAmber,  false, false);
+    addKnob (pid::fbTone,   "FB TONE",  kLime,   false, false);
+
+    // --- echo, left then right -------------------------------------------
+    addKnob (pid::echoTime (0), "TIME",   kCyan,  false, false);
+    addKnob (pid::echoFb (0),   "FEEDBK", kPink,  false, false);
+    addKnob (pid::echoDamp (0), "DAMP",   kLime,  false, false);
+    addKnob (pid::echoMix (0),  "LEVEL",  kAmber, false, false);
+
+    addKnob (pid::echoTime (1), "TIME",   kCyan,  false, false);
+    addKnob (pid::echoFb (1),   "FEEDBK", kPink,  false, false);
+    addKnob (pid::echoDamp (1), "DAMP",   kLime,  false, false);
+    addKnob (pid::echoMix (1),  "LEVEL",  kAmber, false, false);
+
+    jassert ((int) knobs.size() == kNumKnobs);
 
     // --- freeze -----------------------------------------------------------
     freezeButton.setClickingTogglesState (true);
@@ -198,7 +267,7 @@ PhaseDriftEditor::PhaseDriftEditor (PhaseDriftProcessor& p)
     };
     addAndMakeVisible (presetBox);
 
-    setSize (1140, 690);
+    setSize (1360, 860);
     setResizable (false, false);
 }
 
@@ -256,49 +325,83 @@ void PhaseDriftEditor::applyPreset (int presetIndex)
 void PhaseDriftEditor::resized()
 {
     const int margin = 24;
-    const int cardY  = 104;
-    const int cardH  = 252;
-    const int gap    = 14;
-    const int cardW  = (getWidth() - margin * 2 - gap * (pid::numBands - 1)) / pid::numBands;
+    const int gap    = 16;
+
+    // ---- spectral bands ---------------------------------------------------
+    const int cardY = 74;
+    const int cardH = 190;
+    const int cardW = (getWidth() - margin * 2 - gap * 3) / 4;
 
     for (int b = 0; b < pid::numBands; ++b)
         bandRects[b] = { margin + b * (cardW + gap), cardY, cardW, cardH };
 
-    // band knobs (16) -------------------------------------------------------
     for (int b = 0; b < pid::numBands; ++b)
     {
         const auto r = bandRects[b];
         const int cellW = r.getWidth() / 2;
-        const int cellH = (r.getHeight() - 46) / 2;
+        const int cellH = (r.getHeight() - 26) / 2;
+        const int knobW = juce::jmin (104, cellW - 12);
 
         for (int slot = 0; slot < 4; ++slot)
         {
             const int col = slot % 2;
             const int row = slot / 2;
-            const int x = r.getX() + col * cellW + (cellW - 120) / 2;
-            const int y = r.getY() + 44 + row * cellH;
-            knobs[(size_t) (b * 4 + slot)]->setBounds (x, y, 120, cellH);
+            const int x = r.getX() + col * cellW + (cellW - knobW) / 2;
+            const int y = r.getY() + 26 + row * cellH;
+            knobs[(size_t) (kBandKnobs + b * 4 + slot)]->setBounds (x, y, knobW, cellH);
         }
     }
 
-    // core row (8) ----------------------------------------------------------
-    const int coreY   = 384;
-    const int coreH   = 112;
-    const int cellW   = (getWidth() - margin * 2) / 8;
+    // ---- per-band echo strip ---------------------------------------------
+    bandEchoRect = { margin, cardY + cardH + 8, getWidth() - margin * 2, 106 };
+
+    for (int b = 0; b < pid::numBands; ++b)
+        knobs[(size_t) (kBandEchoKnobs + b)]->setBounds (bandRects[b].getX(),
+                                                        bandEchoRect.getY() + 26,
+                                                        cardW, 78);
+
+    // ---- core row ---------------------------------------------------------
+    const int coreY = bandEchoRect.getBottom() + 20;
+    const int cellW = (getWidth() - margin * 2) / 8;
+
+    coreRect = { margin, coreY, getWidth() - margin * 2, 110 };
 
     for (int i = 0; i < 8; ++i)
-        knobs[(size_t) (16 + i)]->setBounds (margin + i * cellW + (cellW - 128) / 2, coreY, 128, coreH);
+        knobs[(size_t) (kCoreKnobs + i)]->setBounds (margin + i * cellW + (cellW - 130) / 2,
+                                                     coreY, 130, 110);
 
-    // motion row (7 + freeze) -----------------------------------------------
-    const int motionY = 522;
-    const int motionH = 112;
+    // ---- motion row -------------------------------------------------------
+    const int motionY = coreY + 132;
+
+    motionRect = { margin, motionY, getWidth() - margin * 2, 110 };
 
     for (int i = 0; i < 7; ++i)
-        knobs[(size_t) (24 + i)]->setBounds (margin + i * cellW + (cellW - 128) / 2, motionY, 128, motionH);
+        knobs[(size_t) (kMotionKnobs + i)]->setBounds (margin + i * cellW + (cellW - 130) / 2,
+                                                       motionY, 130, 110);
 
-    freezeButton.setBounds (margin + 7 * cellW + (cellW - 104) / 2, motionY + 34, 104, 44);
+    freezeButton.setBounds (margin + 7 * cellW + (cellW - 104) / 2, motionY + 33, 104, 44);
 
-    presetBox.setBounds (getWidth() - margin - 210, 34, 210, 30);
+    // ---- echo panels ------------------------------------------------------
+    const int echoY = motionY + 110 + 10;
+    const int panelW = (getWidth() - margin * 2 - gap) / 2;
+
+    echoLeftRect  = { margin, echoY, panelW, 170 };
+    echoRightRect = { margin + panelW + gap, echoY, panelW, 170 };
+
+    for (int c = 0; c < 2; ++c)
+    {
+        const auto panel = (c == 0 ? echoLeftRect : echoRightRect);
+        const int knobW = panel.getWidth() / 4;
+
+        for (int i = 0; i < 4; ++i)
+        {
+            const int idx = (c == 0 ? kEchoLKnobs : kEchoRKnobs) + i;
+            knobs[(size_t) idx]->setBounds (panel.getX() + i * knobW,
+                                            panel.getY() + 34, knobW, 130);
+        }
+    }
+
+    presetBox.setBounds (getWidth() - margin - 200, 16, 200, 28);
 }
 
 //==============================================================================
@@ -306,73 +409,45 @@ void PhaseDriftEditor::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    // background -----------------------------------------------------------
+    // flat background -------------------------------------------------------
+    g.setColour (kBg);
+    g.fillRect (bounds);
+
     {
-        juce::ColourGradient bg (kBg, 0.0f, 0.0f, kBgDeep, 0.0f, (float) getHeight(), false);
+        juce::ColourGradient bg (kBgDeep, 0.0f, 0.0f, kBg, 0.0f, (float) getHeight(), false);
         g.setGradientFill (bg);
-        g.fillRect (bounds);
+        g.fillRect (bounds.removeFromTop ((float) getHeight()));
     }
 
-    // top glow -------------------------------------------------------------
-    {
-        juce::ColourGradient glow (kCyan.withAlpha (0.06f), bounds.getCentreX(), -40.0f,
-                                   kCyan.withAlpha (0.0f),      bounds.getCentreX(), 260.0f,
-                                   true);
-        g.setGradientFill (glow);
-        g.fillRect (bounds.removeFromTop (300.0f).toNearestInt());
-    }
+    // header ------------------------------------------------------------------
+    drawTracked (g, "PHASE DRIFT", juce::Font (26.0f, juce::Font::bold), kText,
+                 { 24.0f, 14.0f, 620.0f, 30.0f }, juce::Justification::centredLeft, 2.2f);
 
-    // faint vertical grid --------------------------------------------------
-    g.setColour (juce::Colours::white.withAlpha (0.02f));
-    for (int x = 0; x < getWidth(); x += 57)
-        g.drawVerticalLine (x, 100.0f, (float) getHeight() - 20.0f);
+    drawTracked (g, "PER-BAND PHASE + INDEPENDENT STEREO ECHO", juce::Font (10.0f), kDim,
+                 { 25.0f, 46.0f, 620.0f, 14.0f }, juce::Justification::centredLeft, 2.2f);
 
-    // header ---------------------------------------------------------------
-    {
-        auto logo = juce::Rectangle<float> (26.0f, 24.0f, 44.0f, 44.0f);
-        juce::ColourGradient lg (kCyan.withAlpha (0.85f), logo.getTopLeft(),
-                                 kViolet.withAlpha (0.75f), logo.getBottomRight(), false);
-        g.setGradientFill (lg);
-        g.fillRoundedRectangle (logo, 11.0f);
+    drawTracked (g, "PRESET", juce::Font (9.6f), kDim,
+                 { (float) (getWidth() - 24 - 200) - 62.0f, 20.0f, 56.0f, 20.0f },
+                 juce::Justification::centredRight, 1.8f);
 
-        g.setColour (juce::Colour (0xff05070a));
-        for (int k = 0; k < 3; ++k)
-        {
-            juce::Path p;
-            for (int i = 0; i <= 24; ++i)
-            {
-                const float t = (float) i / 24.0f;
-                const float xx = logo.getX() + 9.0f + t * (logo.getWidth() - 18.0f);
-                const float yy = logo.getCentreY() + std::sin (t * juce::MathConstants<float>::twoPi
-                                                               + (float) k * 0.75f) * 7.0f;
-                if (i == 0) p.startNewSubPath (xx, yy);
-                else        p.lineTo (xx, yy);
-            }
-            g.strokePath (p, juce::PathStrokeType (1.6f, juce::PathStrokeType::curved,
-                                                   juce::PathStrokeType::rounded));
-        }
-
-        drawTracked (g, "PHASE DRIFT", juce::Font (29.0f, juce::Font::bold), kText,
-                     { 84.0f, 16.0f, 460.0f, 34.0f }, juce::Justification::centredLeft, 2.4f);
-
-        drawTracked (g, "EXPERIMENTAL PHASE-DELAY PROCESSOR", juce::Font (8.6f), kDim,
-                     { 86.0f, 52.0f, 460.0f, 16.0f }, juce::Justification::centredLeft, 2.2f);
-
-        drawTracked (g, "PRESET", juce::Font (8.0f), kDim,
-                     { (float) (getWidth() - 24 - 210), 20.0f, 210.0f, 12.0f },
-                     juce::Justification::centredLeft, 1.8f);
-
-        g.setColour (kBorder.withAlpha (0.9f));
-        g.drawHorizontalLine (96, 24.0f, (float) getWidth() - 24.0f);
-    }
+    g.setColour (kBorder);
+    g.drawHorizontalLine (66, 24.0f, (float) getWidth() - 24.0f);
 
     // section titles -------------------------------------------------------
-    drawTracked (g, "SPECTRAL BANDS", juce::Font (8.4f), kDim,
-                 { 24.0f, 86.0f, 300.0f, 12.0f }, juce::Justification::centredLeft, 2.0f);
-    drawTracked (g, "CORE", juce::Font (8.4f), kDim,
-                 { 24.0f, 366.0f, 300.0f, 12.0f }, juce::Justification::centredLeft, 2.0f);
-    drawTracked (g, "MOTION", juce::Font (8.4f), kDim,
-                 { 24.0f, 504.0f, 300.0f, 12.0f }, juce::Justification::centredLeft, 2.0f);
+    drawTracked (g, "SPECTRAL BANDS", juce::Font (10.0f), kDim,
+                 { 24.0f, 62.0f, 300.0f, 12.0f }, juce::Justification::centredLeft, 2.0f);
+
+    drawTracked (g, "BAND ECHO  /  DELAY RATIO", juce::Font (10.0f), kDim,
+                 { 36.0f, (float) bandEchoRect.getY() + 9, 460.0f, 14.0f },
+                 juce::Justification::centredLeft, 2.0f);
+
+    drawTracked (g, "CORE", juce::Font (10.0f), kDim,
+                 { 24.0f, (float) coreRect.getY() - 14, 300.0f, 12.0f },
+                 juce::Justification::centredLeft, 2.0f);
+
+    drawTracked (g, "MOTION", juce::Font (10.0f), kDim,
+                 { 24.0f, (float) motionRect.getY() - 14, 300.0f, 12.0f },
+                 juce::Justification::centredLeft, 2.0f);
 
     // band cards -----------------------------------------------------------
     for (int b = 0; b < pid::numBands; ++b)
@@ -380,40 +455,83 @@ void PhaseDriftEditor::paint (juce::Graphics& g)
         const auto r = bandRects[b].toFloat();
         const juce::Colour accent = kBandAccents[b];
 
-        g.setColour (kPanel.withAlpha (0.92f));
-        g.fillRoundedRectangle (r, 9.0f);
+        g.setColour (kPanel);
+        g.fillRoundedRectangle (r, 6.0f);
 
         g.setColour (kBorder);
-        g.drawRoundedRectangle (r.reduced (0.5f), 9.0f, 1.0f);
+        g.drawRoundedRectangle (r.reduced (0.5f), 6.0f, 1.0f);
 
         g.setColour (accent.withAlpha (0.55f));
-        g.fillRoundedRectangle (r.getX() + 14.0f, r.getY() + 0.5f,
-                                r.getWidth() - 28.0f, 1.6f, 0.8f);
+        g.fillRect (r.getX() + 14.0f, r.getY() + 0.5f, r.getWidth() - 28.0f, 1.6f);
 
-        // header of the card
-        drawTracked (g, "BAND " + juce::String (b + 1), juce::Font (10.0f, juce::Font::bold),
-                     accent, { r.getX() + 16.0f, r.getY() + 12.0f, 140.0f, 16.0f },
+        drawTracked (g, "BAND " + juce::String (b + 1), juce::Font (12.0f, juce::Font::bold),
+                     accent, { r.getX() + 16.0f, r.getY() + 10.0f, 140.0f, 16.0f },
                      juce::Justification::centredLeft, 1.4f);
 
-        drawTracked (g, kBandNames[b], juce::Font (8.2f), kDim,
-                     { r.getRight() - 116.0f, r.getY() + 13.0f, 100.0f, 14.0f },
+        drawTracked (g, kBandNames[b], juce::Font (9.8f), kDim,
+                     { r.getRight() - 130.0f, r.getY() + 9.0f, 114.0f, 16.0f },
                      juce::Justification::right, 1.2f);
+    }
+
+    // band echo strip -------------------------------------------------------
+    {
+        const auto r = bandEchoRect.toFloat();
+
+        g.setColour (kPanel.withAlpha (0.85f));
+        g.fillRoundedRectangle (r, 6.0f);
+        g.setColour (kBorder);
+        g.drawRoundedRectangle (r, 6.0f, 1.0f);
+
+        for (int b = 0; b < pid::numBands; ++b)
+        {
+            const juce::Colour accent = kBandAccents[b];
+            g.setColour (accent.withAlpha (0.25f));
+            g.fillRect ((float) bandRects[b].getX() + 6.0f, r.getY() + 26.0f,
+                        2.0f, r.getHeight() - 40.0f);
+        }
+    }
+
+    // echo panels -----------------------------------------------------------
+    for (int c = 0; c < 2; ++c)
+    {
+        const auto r = (c == 0 ? echoLeftRect : echoRightRect).toFloat();
+        const juce::Colour accent = c == 0 ? kCyan : kPink;
+
+        g.setColour (kPanel);
+        g.fillRoundedRectangle (r, 6.0f);
+        g.setColour (kBorder);
+        g.drawRoundedRectangle (r, 6.0f, 1.0f);
+
+        g.setColour (accent.withAlpha (0.55f));
+        g.fillRect (r.getX() + 14.0f, r.getY() + 0.5f, r.getWidth() - 28.0f, 1.6f);
+
+        drawTracked (g, c == 0 ? "ECHO  /  LEFT" : "ECHO  /  RIGHT",
+                     juce::Font (12.0f, juce::Font::bold), accent,
+                     { r.getX() + 16.0f, r.getY() + 10.0f, 220.0f, 16.0f },
+                     juce::Justification::centredLeft, 1.6f);
+
+        g.setColour (kBorder.withAlpha (0.9f));
+        g.fillRect (r.getX() + 16.0f, r.getY() + 30.0f, r.getWidth() - 32.0f, 1.0f);
     }
 
     // footer ---------------------------------------------------------------
     g.setColour (kBorder.withAlpha (0.8f));
-    g.drawHorizontalLine (getHeight() - 46, 24.0f, (float) getWidth() - 24.0f);
+    g.drawHorizontalLine (getHeight() - 30, 24.0f, (float) getWidth() - 24.0f);
 
-    drawTracked (g, "PHASE DRIFT  v0.9.0", juce::Font (8.2f), kDim,
-                 { 24.0f, (float) getHeight() - 34.0f, 340.0f, 12.0f },
+    drawTracked (g, "v0.9.0", juce::Font (9.8f), kDim,
+                 { 24.0f, (float) getHeight() - 22.0f, 120.0f, 12.0f },
                  juce::Justification::centredLeft, 1.4f);
 
-    drawTracked (g, "DOUBLE-CLICK A KNOB TO RESET  /  DRAG VERTICALLY TO FINE-TUNE",
-                 juce::Font (8.2f), kDim.withAlpha (0.8f),
-                 { 360.0f, (float) getHeight() - 34.0f, 520.0f, 12.0f },
-                 juce::Justification::centredLeft, 1.2f);
+    drawTracked (g, "DOUBLE-CLICK A KNOB TO RESET   /   ALT-DRAG FOR FINE STEPS",
+                 juce::Font (9.8f), kDim.withAlpha (0.85f),
+                 { 360.0f, (float) getHeight() - 22.0f, 620.0f, 12.0f },
+                 juce::Justification::centredRight, 1.2f);
 
-    drawTracked (g, "AGPL-3.0", juce::Font (8.2f), kDim,
-                 { (float) getWidth() - 24.0f - 160.0f, (float) getHeight() - 34.0f, 160.0f, 12.0f },
+    drawTracked (g, "AGPL-3.0", juce::Font (9.8f), kDim,
+                 { (float) getWidth() - 24.0f - 160.0f, (float) getHeight() - 22.0f, 160.0f, 12.0f },
                  juce::Justification::right, 1.4f);
 }
+
+
+
+

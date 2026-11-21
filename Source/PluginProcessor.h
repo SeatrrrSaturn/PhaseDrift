@@ -25,10 +25,19 @@ namespace pid
     inline constexpr auto freeze    = "freeze";
 
     inline constexpr int   numBands = 4;
+    inline constexpr int   numChans = 2;
+
     inline const char* bandFreq  (int b) { static const char* v[] = { "b1_freq",  "b2_freq",  "b3_freq",  "b4_freq"  }; return v[b]; }
     inline const char* bandPhase (int b) { static const char* v[] = { "b1_phase", "b2_phase", "b3_phase", "b4_phase" }; return v[b]; }
     inline const char* bandDepth (int b) { static const char* v[] = { "b1_depth", "b2_depth", "b3_depth", "b4_depth" }; return v[b]; }
     inline const char* bandRate  (int b) { static const char* v[] = { "b1_rate",  "b2_rate",  "b3_rate",  "b4_rate"  }; return v[b]; }
+    inline const char* bandEcho  (int b) { static const char* v[] = { "b1_echo",  "b2_echo",  "b3_echo",  "b4_echo"  }; return v[b]; }
+
+    // per output channel (0 = left, 1 = right) - the two channels are fully separate
+    inline const char* echoTime  (int c) { static const char* v[] = { "echo_time_l", "echo_time_r" }; return v[c]; }
+    inline const char* echoFb    (int c) { static const char* v[] = { "echo_fb_l",   "echo_fb_r"   }; return v[c]; }
+    inline const char* echoDamp  (int c) { static const char* v[] = { "echo_damp_l", "echo_damp_r" }; return v[c]; }
+    inline const char* echoMix   (int c) { static const char* v[] = { "echo_mix_l",  "echo_mix_r"  }; return v[c]; }
 }
 
 //==============================================================================
@@ -55,7 +64,7 @@ public:
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return 0.5; }
+    double getTailLengthSeconds() const override { return 12.0; }
 
     //==========================================================================
     int getNumPrograms() override { return 1; }
@@ -72,6 +81,9 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     juce::AudioProcessorValueTreeState apvts;
+
+    /** Longest delay the echo taps can reach, in seconds. */
+    static constexpr float maxEchoSeconds = 3.2f;
 
 private:
     //==========================================================================
@@ -122,12 +134,63 @@ private:
     };
 
     //==========================================================================
+    /** One fractional delay line per band, per channel. */
+    struct EchoTap
+    {
+        std::vector<float> buf;
+        int   writePos = 0;
+        float delaySamples = 0.0f;
+        float dampState = 0.0f;
+
+        void prepare (int maxSamples);
+        void reset() noexcept;
+
+        inline float read (float delay) noexcept
+        {
+            const int n = (int) buf.size();
+
+            if (n < 4)
+                return 0.0f;
+
+            const float hi = (float) (n - 2);
+            delay = juce::jlimit (1.0f, hi, delay);
+
+            float pos = (float) writePos - delay;
+            while (pos < 0.0f)
+                pos += (float) n;
+
+            int i0 = (int) pos;
+            if (i0 >= n) i0 -= n;
+
+            const float frac = pos - (float) i0;
+            const int i1 = (i0 + 1 >= n) ? 0 : i0 + 1;
+
+            const float a = buf[(size_t) i0];
+            const float b = buf[(size_t) i1];
+            return a + frac * (b - a);
+        }
+
+        inline void write (float x) noexcept
+        {
+            if (buf.empty())
+                return;
+
+            buf[(size_t) writePos] = x;
+
+            if (++writePos >= (int) buf.size())
+                writePos = 0;
+        }
+    };
+
+    //==========================================================================
     struct Channel
     {
         Allpass1 bandAP[pid::numBands][4];
         Allpass1 seriesAP[pid::numBands][4];
 
         Biquad splitLP[3], splitHP[3];
+
+        EchoTap echo[pid::numBands];
 
         OnePole tiltLP, postLP, fbLP;
         float lfoPhase[pid::numBands] {};
@@ -138,6 +201,7 @@ private:
 
     std::vector<Channel> channels;
 
+    //==========================================================================
     // smoothed / per-block values
     float sr = 48000.0f;
     float tiltK = 0.05f, toneK = 0.5f;
@@ -146,6 +210,14 @@ private:
     float spreadAmount = 0.0f, globalPhaseNorm = 0.0f, waveShape = 0.0f, chaosAmount = 0.0f;
 
     juce::SmoothedValue<float> smInGain, smOutGain, smMix, smFeedback, smDrive, smRing, smTilt, smTopo;
+
+    // echo: independent per channel
+    juce::SmoothedValue<float> smEchoTime[pid::numChans];
+    juce::SmoothedValue<float> smEchoFb[pid::numChans];
+    juce::SmoothedValue<float> smEchoMix[pid::numChans];
+    float echoDampK[pid::numChans] { 0.5f, 0.5f };
+    float echoBandScale[pid::numBands] { 1.0f, 1.0f, 1.0f, 1.0f };
+
     float dcState[2] { 0.0f, 0.0f };
     float dcLast[2] { 0.0f, 0.0f };
 

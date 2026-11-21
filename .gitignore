@@ -7,4 +7,5 @@ _deps/
 *.vcxproj*
 .DS_Store
 *.vst3
+dist/
 !docs/*.png
