@@ -56,10 +56,13 @@ x ──► LP/HP ──► band0 ──► 4×allpass(a0) ──► delay(t0·s
 
 ### 方式一：安装包（推荐）
 
-下载 `PhaseDrift-Setup.exe`，双击 → 管理员权限运行 → 点 `INSTALL`。
-它会写入 `C:\Program Files\Common Files\VST3\Phase Drift.vst3`。
-卸载用同一个 exe 里的 `UNINSTALL`（或 `PhaseDrift-Setup.exe /uninstall`）。
-静默安装：`PhaseDrift-Setup.exe /install`（退出码 0 = 成功）。
+下载 `PhaseDrift-Setup.exe`（标准 NSIS 安装向导，中文/英文），双击 → 欢迎页 → 协议页 →
+选择安装目录（默认 `C:\Program Files\Common Files\VST3`）→ 安装 → 完成。
+卸载走 `控制面板 → 程序和功能 → Phase Drift (VST3)`，或安装目录里的 `uninstall.exe`。
+静默安装：`PhaseDrift-Setup.exe /S`。
+
+> 安装包没有代码签名证书，所以 Windows 的 UAC 弹窗会显示“发布者：未知”（Publisher: Unknown）。
+> 这是所有未签名的个人软件的正常表现，不影响安装。
 
 ### 方式二：手动
 
@@ -93,13 +96,16 @@ Windows 上请使用 MSVC 工具链。
 
 ### 生成安装包
 
+用 **NSIS 3.11**（Modern UI 2 标准向导）编译：
+
 ```bash
-# Windows，需要 .NET Framework 的 csc.exe
-PhaseDrift\installer\build_setup.cmd
+# 便携版 NSIS 解压到 D:\work\_tools\nsis\nsis-3.11\ 即可，无需安装
+D:\work\PhaseDrift\installer\build_setup.cmd
 ```
 
-它把编译好的 `Phase Drift.vst3` 作为资源嵌进 `dist/PhaseDrift-Setup.exe`
-（单文件、约 3.5 MB、manifest 已声明 requireAdministrator）。
+脚本是 `installer/installer.nsi`：欢迎页 / 协议页 / 安装目录页 / 安装进度 / 完成页，
+管理员权限（`RequestExecutionLevel admin`），LZMA 压缩，输出 `dist/PhaseDrift-Setup.exe`
+（约 1.3 MB），同时写入 `HKLM\...\Uninstall\PhaseDrift`，所以会出现在“程序和功能”里。
 
 ## 已知特性 / Notes
 
@@ -125,7 +131,7 @@ PhaseDrift\installer\build_setup.cmd
     具体触发点是 LFO PH 旋钮下方的 `0°` 数值文本。
   * 公司 / VST3 vendor 名改为 **Seater Saturn**（manufacturer code 与 plugin code
     未变，插件 CID 不变，老工程仍然识别同一个插件）。
-  * 新增 `installer/`（C# 单文件 `setup.exe` 生成脚本）。
+  * 新增 `installer/`（NSIS Modern UI 2 安装向导，`build_setup.cmd` 一键生成标准 `setup.exe`）。
 
 ## 许可 / License
 

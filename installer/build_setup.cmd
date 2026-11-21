@@ -2,17 +2,16 @@
 setlocal
 set TMP=D:\work\_tools\tmp
 set TEMP=D:\work\_tools\tmp
-set CSC=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
-set SRC=D:\work\PhaseDrift\build\PhaseDrift_artefacts\Release\VST3\Phase Drift.vst3\Contents\x86_64-win\Phase Drift.vst3
+set MAKENSIS=D:\work\_tools\nsis\nsis-3.11\makensis.exe
 set OUTDIR=D:\work\PhaseDrift\dist
 
 if not exist "%OUTDIR%" mkdir "%OUTDIR%"
+if not exist "%MAKENSIS%" (
+  echo NSIS not found: %MAKENSIS%
+  echo Download nsis-3.11.zip from sourceforge and extract it to D:\work\_tools\nsis
+  exit /b 1
+)
 
-"%CSC%" /nologo /target:winexe /platform:x64 /optimize+ ^
-  /win32manifest:"D:\work\PhaseDrift\installer\setup.manifest" ^
-  /resource:"%SRC%",PhaseDrift.dll.bin ^
-  /out:"%OUTDIR%\PhaseDrift-Setup.exe" ^
-  "D:\work\PhaseDrift\installer\Setup.cs"
-
+"%MAKENSIS%" /V2 /INPUTCHARSET UTF8 "D:\work\PhaseDrift\installer\installer.nsi"
 if errorlevel 1 (echo BUILD FAILED & exit /b 1)
 echo OK: %OUTDIR%\PhaseDrift-Setup.exe
