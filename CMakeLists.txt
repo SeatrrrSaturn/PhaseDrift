@@ -34,7 +34,7 @@ endif()
 # Plugin target
 # --------------------------------------------------------------------------------
 juce_add_plugin(PhaseDrift
-    COMPANY_NAME              "PhaseDrift Audio"
+    COMPANY_NAME              "Seater Saturn"
     COMPANY_WEBSITE           "https://github.com/"
     BUNDLE_ID                 "com.phaseDrift.audio"
     PLUGIN_MANUFACTURER_CODE  "PhDr"

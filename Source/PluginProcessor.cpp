@@ -21,7 +21,15 @@ namespace
 
     juce::String pctText (float v)   { return juce::String (juce::roundToInt (v * 100.0f)) + " %"; }
     juce::String dbText  (float v)   { return (v >= 0 ? "+" : "") + juce::String (v, 1) + " dB"; }
-    juce::String degText (float v)   { return juce::String (juce::roundToInt (v)) + juce::String::fromUTF8 ("\u00b0"); }
+    juce::String degText (float v)
+    {
+        // NB: never build the degree sign from a narrow string literal - MSVC on a
+        // CP936 machine encodes "\u00b0" as GBK bytes (0xA1 0xE3), which then decode
+        // into broken code points and can wedge JUCE's UTF-8 scanner (hard crash in
+        // Font::getStringWidthFloat). Build it straight from the code point instead.
+        return juce::String (juce::roundToInt (v))
+               + juce::String::charToString ((juce::juce_wchar) 0x00b0);
+    }
     juce::String xText   (float v)   { return juce::String (v, 2) + "x"; }
 
     /** Skewed sine -> triangle -> saw LFO. */
