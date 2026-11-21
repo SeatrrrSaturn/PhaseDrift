@@ -76,6 +76,18 @@ Windows 上请使用 MSVC 工具链。
 * 反馈 > 70% 且 CHAOS 高时是故意不稳定的 —— 这是设计的一部分。
 * 内部有 DC blocker 与 ±16 的硬限幅，防止反馈环跑飞。
 
+## 变更 / Changelog
+
+* **0.9.0** (2026-11-21)
+  * 修复：编辑器一打开就崩溃（宿主报 `0xC0000005` 指向本插件 DLL）。
+    原因是源码里的 `"\u00b0"` 在中文（CP936）Windows 上被 MSVC 编成 GBK 字节
+    `A1 E3`，交给 `String::fromUTF8` 后解出坏码点，JUCE 在
+    `Font::getStringWidthFloat` 里按 UTF-8 逐字节推进时冲出缓冲区末尾 →
+    读到未映射页。改为 `String::charToString (0x00b0)`，不再依赖源码编码。
+    具体触发点是 LFO PH 旋钮下方的 `0°` 数值文本。
+  * 公司 / VST3 vendor 名改为 **Seater Saturn**（manufacturer code 与 plugin code
+    未变，插件 CID 不变，老工程仍然识别同一个插件）。
+
 ## 许可 / License
 
 AGPL-3.0（因为使用 JUCE 8 的 AGPL 授权）。见 `LICENSE`。
